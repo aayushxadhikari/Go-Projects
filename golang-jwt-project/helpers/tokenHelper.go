@@ -1,51 +1,56 @@
 package helpers
 
 import (
-	"context"
-	"fmt"
-	"golang-jwt-project/database"
 	"log"
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/golang-jwt/jwt"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/golang-jwt/jwt/v4"
 )
 
-type SignedDetails struct{
-	Email	 	string 
-	First_name 	string
-	Last_name 	string
-	Uid 		string
-	User_type 	string 
-	jwt.StandardClaims
+type SignedDetails struct {
+	Email      string
+	First_name string
+	Last_name  string
+	Uid        string
+	User_type  string
+	jwt.RegisteredClaims
 }
 
-var userCollection *mongo.Collection = database.OpenCollection(database.Client, "user")
+var SECRET_KEY = os.Getenv("SECRET_KEY")
 
-var SECRET_KEY string = os.Getenv("SECRET_KEY")
-
-func GenerateAllTokens(email string, firstName string, lastName string, userType string, uid string)(signedToken string, signedRefreshToken string){
+func GenerateAllTokens(email, firstName, lastName, userType, uid string) (string, string, error) {
+	// Token claims
 	claims := &SignedDetails{
-		Email : email,
+		Email:      email,
 		First_name: firstName,
-		Last_name: lastName,
-		Uid: uid,
-		User_type: userType,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(24)).Unix(),
+		Last_name:  lastName,
+		Uid:        uid,
+		User_type:  userType,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 1 day expiration
 		},
 	}
-	refreshClaims := &SignedDetails{
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt : time.Now().Local().Add(time.Hour * time.Duration(168)).Unix(),
-		},
-	}
-	
 
+	// Refresh token claims
+	refreshClaims := &SignedDetails{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(168 * time.Hour)), // 7 days expiration
+		},
+	}
+
+	// Generate tokens
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(SECRET_KEY))
+	if err != nil {
+		log.Println("Error generating access token:", err)
+		return "", "", err
+	}
+
+	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString([]byte(SECRET_KEY))
+	if err != nil {
+		log.Println("Error generating refresh token:", err)
+		return "", "", err
+	}
+
+	return token, refreshToken, nil
 }
