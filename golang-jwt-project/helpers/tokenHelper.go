@@ -6,11 +6,12 @@ import (
 	"os"
 	"time"
 
+	"golang-jwt-project/database"
+
 	"github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"golang-jwt-project/database"
 )
 
 type SignedDetails struct {
@@ -92,3 +93,32 @@ func UpdateAllTokens(signedToken string, signedReferenceToken string, userId str
 		log.Panic(err)
 	}
 }
+
+func ValidateToken(signedToken string) (claims *SignedDetails, msg string){
+	token, err := jwt.ParseWithClaims(
+		signedToken,
+		&SignedDetails{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(SECRET_KEY), nil
+		},	
+	)
+	if err != nil {
+		msg = err.Error()
+		return
+	}
+	claims, ok := token.Claims.(*SignedDetails)
+	if !ok{
+		msg = "token is not valid"
+		msg = err.Error()
+		return
+	}
+
+	if claims.ExpiresAt.Time.Unix() < time.Now().Unix(){
+		msg = "token is expired"
+		msg = err.Error()
+		return
+	}
+	return claims, msg
+}
+
+
