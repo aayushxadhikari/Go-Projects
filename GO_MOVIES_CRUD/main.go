@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Movie struct{
+type Movie {
 	ID string `json:"id"`
 	Isbn string `json:"isbn"`
 	Title string `json:"title"`
