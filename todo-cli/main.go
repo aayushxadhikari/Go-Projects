@@ -50,6 +50,7 @@ func main(){
 		}else{
 			fmt.Println("Marked as Done!")
 		}
+	// converting the string to integer and then deleting the task
 	case "delete":
 		if len(os.Args)<3{
 			fmt.Println("Usage: todo delete <task id>")
