@@ -67,7 +67,7 @@ func updateItemHandler(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	if item, ok := updateItem(id, updated.Name,updated.price);ok{
+	if item, ok := updateItem(id, updated.Name,updated.Price);ok{
 		w.Header().Set("Content-Type","application/json")
 		json.NewEncoder(w).Encode(item)
 	}else{
